@@ -1,0 +1,291 @@
+This guide compares Migraine with other popular workflow automation tools and traditional shell scripting approaches.
+
+## Quick Comparison Table
+
+| Feature | Migraine | Shell Scripts | Make | Task Runners (npm/yarn) | GitHub Actions |
+|---------|----------|---------------|------|------------------------|----------------|
+| Variable Management | ✅ Built-in | ⚠️ Manual | ⚠️ Basic | ✅ Via package.json | ✅ Via yaml |
+| Pre-flight Checks | ✅ Built-in | ⚠️ Manual | ❌ No | ❌ No | ⚠️ Manual |
+| Template System | ✅ Native | ❌ No | ❌ No | ❌ No | ✅ Via yaml |
+| Remote Loading | ✅ Yes | ❌ No | ❌ No | ✅ Via npm | ✅ Via yaml |
+| Cross-platform | ✅ Yes | ⚠️ Limited | ✅ Yes | ✅ Yes | ✅ Yes |
+| Workflow Validation | ✅ Built-in | ❌ No | ❌ No | ❌ No | ✅ Schema |
+| Discrete Actions | ✅ Built-in | ⚠️ Manual | ✅ Targets | ✅ Scripts | ✅ Jobs |
+| Local Storage | ✅ Yes | ❌ No | ❌ No | ✅ package.json | ❌ No |
+| Version Control | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+
+## Detailed Comparisons
+
+### Migraine vs Shell Scripts
+
+#### Shell Scripts
+👍 Advantages:
+- Universal availability
+- No additional dependencies
+- Full system access
+- Maximum flexibility
+
+👎 Disadvantages:
+- No built-in templating
+- Manual variable management
+- Platform-specific syntax
+- No standardized structure
+- Error-prone
+- Limited reusability
+
+#### Migraine
+👍 Advantages:
+- Structured workflow definition
+- Built-in variable management
+- Pre-flight validation
+- Template system
+- Cross-platform compatibility
+- Reusable components
+- Standardized format
+
+👎 Disadvantages:
+- Additional tool to install
+- Learning curve for syntax
+- Less flexible than raw shell scripts
+
+### Example Comparison
+
+#### Shell Script Approach
+```bash
+#!/bin/bash
+
+# Manual variable definition
+PROJECT_PATH=$1
+DEPENDENCIES=$2
+
+# Manual error checking
+if [ -z "$PROJECT_PATH" ]; then
+    echo "Error: PROJECT_PATH is required"
+    exit 1
+fi
+
+# Manual directory check
+if [ ! -d "$PROJECT_PATH" ]; then
+    mkdir -p "$PROJECT_PATH"
+fi
+
+# Main logic
+cd "$PROJECT_PATH" || exit
+npm init -y
+if [ -n "$DEPENDENCIES" ]; then
+    npm install "$DEPENDENCIES"
+fi
+```
+
+#### Migraine Approach
+```json
+{
+  "name": "Node.js Setup",
+  "pre_checks": [
+    {
+      "command": "test -d {{PROJECT_PATH}} || mkdir -p {{PROJECT_PATH}}",
+      "description": "ensure project directory exists"
+    }
+  ],
+  "steps": [
+    {
+      "command": "cd {{PROJECT_PATH}} && npm init -y",
+      "description": "initialize project"
+    },
+    {
+      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
+      "description": "install dependencies"
+    }
+  ]
+}
+```
+
+### Migraine vs Make
+
+#### Make
+👍 Advantages:
+- Widely available
+- Good for build systems
+- Target dependency management
+- Parallel execution
+
+👎 Disadvantages:
+- Complex syntax
+- Limited template support
+- No built-in variable validation
+- Primarily focused on build processes
+
+#### Migraine
+👍 Advantages:
+- Modern JSON-based syntax
+- Built for workflow automation
+- Strong variable management
+- Remote template loading
+- Pre-flight validation
+
+👎 Disadvantages:
+- Not designed for build systems
+- No parallel execution
+- Newer, smaller community
+
+### Example Comparison
+
+#### Makefile Approach
+```makefile
+PROJECT_PATH ?= .
+DEPENDENCIES ?=
+
+.PHONY: setup install
+
+setup:
+    mkdir -p $(PROJECT_PATH)
+    cd $(PROJECT_PATH) && npm init -y
+
+install:
+    cd $(PROJECT_PATH) && npm install $(DEPENDENCIES)
+```
+
+#### Migraine Approach
+```json
+{
+  "name": "Project Setup",
+  "actions": {
+    "setup": {
+      "command": "mkdir -p {{PROJECT_PATH}} && cd {{PROJECT_PATH}} && npm init -y",
+      "description": "initialize project"
+    },
+    "install": {
+      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
+      "description": "install dependencies"
+    }
+  }
+}
+```
+
+### Migraine vs NPM Scripts
+
+#### NPM Scripts
+👍 Advantages:
+- Integrated with Node.js projects
+- Simple syntax
+- Package.json integration
+- Huge ecosystem
+
+👎 Disadvantages:
+- Limited to Node.js projects
+- Basic script running
+- No built-in templating
+- Limited workflow control
+
+#### Migraine
+👍 Advantages:
+- Language agnostic
+- Advanced workflow control
+- Template system
+- Pre-flight checks
+- Variable management
+
+👎 Disadvantages:
+- Separate tool installation
+- Not integrated with package managers
+- Additional configuration files
+
+### Example Comparison
+
+#### NPM Scripts Approach
+```json
+{
+  "scripts": {
+    "setup": "mkdir -p $PROJECT_PATH && cd $PROJECT_PATH && npm init -y",
+    "install-deps": "cd $PROJECT_PATH && npm install $DEPENDENCIES"
+  }
+}
+```
+
+#### Migraine Approach
+```json
+{
+  "name": "Node.js Project Setup",
+  "pre_checks": [
+    {
+      "command": "node --version",
+      "description": "check node installation"
+    }
+  ],
+  "actions": {
+    "setup": {
+      "command": "mkdir -p {{PROJECT_PATH}} && cd {{PROJECT_PATH}} && npm init -y",
+      "description": "initialize project"
+    },
+    "install": {
+      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
+      "description": "install dependencies"
+    }
+  }
+}
+```
+
+## When to Choose Migraine
+
+### Choose Migraine When You Need:
+- Reusable workflow templates
+- Strong variable management
+- Pre-flight validation
+- Cross-platform compatibility
+- Team standardization
+- Remote template sharing
+- Workflow versioning
+
+### Consider Alternatives When:
+- You need maximum flexibility (Shell Scripts)
+- You're focused on build systems (Make)
+- You're working exclusively with Node.js (NPM Scripts)
+- You need CI/CD integration (GitHub Actions)
+- You need parallel execution (Make/GitHub Actions)
+
+## Migration Guides
+
+### From Shell Scripts to Migraine
+1. Identify repeated patterns in scripts
+2. Extract variables and commands
+3. Create workflow templates
+4. Add pre-flight checks
+5. Define discrete actions
+
+### From Make to Migraine
+1. Convert targets to actions
+2. Transform variables to Migraine format
+3. Add pre-flight checks
+4. Create workflow templates
+
+### From NPM Scripts to Migraine
+1. Convert scripts to actions
+2. Extract environment variables
+3. Add pre-flight validation
+4. Create reusable templates
+
+## Best Practices for Migration
+
+1. Start with Simple Workflows
+   - Convert basic scripts first
+   - Add complexity gradually
+   - Test thoroughly
+
+2. Use Hybrid Approach Initially
+   - Keep complex scripts
+   - Migrate gradually
+   - Maintain backwards compatibility
+
+3. Document Changes
+   - Note differences
+   - Update team documentation
+   - Provide migration guides
+
+4. Focus on Benefits
+   - Enhance reusability
+   - Add pre-flight checks
+   - Improve variable management
+
+## Conclusion
+
+Migraine provides a modern approach to workflow automation, combining the best aspects of traditional tools with modern features like templating and validation. While it may not replace all use cases for traditional tools, it offers significant advantages for teams looking to standardize and automate their development workflows.

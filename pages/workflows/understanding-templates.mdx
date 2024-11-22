@@ -1,0 +1,303 @@
+Templates are the foundation of Migraine workflows. They are JSON-structured documents that define how a sequence of operations should be executed, what checks should be performed, and what actions are available. Templates make workflows reusable, shareable, and version-controlled.
+
+## Purpose
+
+Templates solve several common development challenges:
+- Standardizing repetitive tasks across teams
+- Ensuring consistent environment setup
+- Automating complex deployment procedures
+- Maintaining reliable operation sequences
+- Sharing best practices within organizations
+
+## Template Structure
+
+A template consists of several key sections:
+
+```json
+{
+  "version": "v1",
+  "name": "Example Template",
+  "description": "Example template showcasing key features",
+  "pre_checks": [...],
+  "steps": [...],
+  "actions": {...},
+  "config": {
+    "variables": {},
+    "store_variables": true
+  }
+}
+```
+
+### Core Components
+
+#### 1. Metadata
+```json
+{
+  "version": "v1",
+  "name": "Template Name",
+  "description": "Template description"
+}
+```
+- `version`: Template specification version
+- `name`: Human-readable name
+- `description`: Detailed explanation of the template's purpose
+
+#### 2. Pre-checks
+```json
+{
+  "pre_checks": [
+    {
+      "command": "docker --version",
+      "description": "check if docker is installed"
+    }
+  ]
+}
+```
+Pre-checks validate requirements before workflow execution:
+- Tool availability
+- Environment setup
+- Resource presence
+- Permission checks
+
+#### 3. Steps
+```json
+{
+  "steps": [
+    {
+      "command": "npm install",
+      "description": "install dependencies"
+    },
+    {
+      "command": "npm run build",
+      "description": "build application"
+    }
+  ]
+}
+```
+Steps define the main sequence of operations:
+- Execute in order
+- Each step must complete successfully
+- Can use variables
+- Should include descriptive comments
+
+#### 4. Actions
+```json
+{
+  "actions": {
+    "start": {
+      "command": "npm start",
+      "description": "start application"
+    },
+    "test": {
+      "command": "npm test",
+      "description": "run tests"
+    }
+  }
+}
+```
+Actions are named, independent operations that can be:
+- Executed individually
+- Referenced by name
+- Used for maintenance tasks
+- Called as needed
+
+#### 5. Configuration
+```json
+{
+  "config": {
+    "variables": {
+      "PROJECT_PATH": ["slugify"],
+      "NODE_ENV": []
+    },
+    "store_variables": true
+  }
+}
+```
+Configuration defines:
+- Required variables
+- Variable processing rules
+- Storage preferences
+- Runtime behavior
+
+## Variable System
+
+### Syntax
+Variables use double curly braces: `{{VARIABLE_NAME}}`
+
+### Variable Rules
+1. Use UPPERCASE names for clarity
+2. Keep names descriptive but concise
+3. Use underscores for spaces
+4. Avoid special characters
+
+### Variable Processing
+Variables can have processing rules:
+```json
+{
+  "variables": {
+    "PROJECT_PATH": ["slugify"],  // Will be converted to slug format
+    "DATABASE_URL": [],           // No processing
+    "ENV": ["uppercase"]          // Will be converted to uppercase
+  }
+}
+```
+
+## Template Examples
+
+### 1. Development Environment Setup
+```json
+{
+  "version": "v1",
+  "name": "Development Environment",
+  "description": "Setup local development environment",
+  "pre_checks": [
+    {
+      "command": "command -v docker >/dev/null 2>&1",
+      "description": "check for docker"
+    },
+    {
+      "command": "command -v node >/dev/null 2>&1",
+      "description": "check for node"
+    }
+  ],
+  "steps": [
+    {
+      "command": "git clone {{REPO_URL}} {{PROJECT_PATH}}",
+      "description": "clone repository"
+    },
+    {
+      "command": "cd {{PROJECT_PATH}} && npm install",
+      "description": "install dependencies"
+    }
+  ],
+  "actions": {
+    "start": {
+      "command": "cd {{PROJECT_PATH}} && docker-compose up -d",
+      "description": "start development environment"
+    },
+    "stop": {
+      "command": "cd {{PROJECT_PATH}} && docker-compose down",
+      "description": "stop development environment"
+    }
+  },
+  "config": {
+    "variables": {
+      "REPO_URL": [],
+      "PROJECT_PATH": ["slugify"]
+    },
+    "store_variables": true
+  }
+}
+```
+
+### 2. Deployment Workflow
+```json
+{
+  "version": "v1",
+  "name": "Production Deploy",
+  "description": "Deploy application to production",
+  "pre_checks": [
+    {
+      "command": "test -f {{PROJECT_PATH}}/.env",
+      "description": "check for environment file"
+    },
+    {
+      "command": "aws --version",
+      "description": "check for AWS CLI"
+    }
+  ],
+  "steps": [
+    {
+      "command": "cd {{PROJECT_PATH}} && npm run build",
+      "description": "build application"
+    },
+    {
+      "command": "aws s3 sync {{PROJECT_PATH}}/dist s3://{{BUCKET_NAME}}",
+      "description": "upload to S3"
+    }
+  ],
+  "actions": {
+    "rollback": {
+      "command": "aws s3 cp s3://{{BUCKET_NAME}}/backup s3://{{BUCKET_NAME}}/current",
+      "description": "rollback to previous version"
+    }
+  },
+  "config": {
+    "variables": {
+      "PROJECT_PATH": [],
+      "BUCKET_NAME": []
+    },
+    "store_variables": true
+  }
+}
+```
+
+## Best Practices
+
+### 1. Template Design
+- Keep templates focused on a single purpose
+- Break complex workflows into smaller templates
+- Use clear, descriptive names
+- Include thorough documentation
+
+### 2. Command Structure
+- Use absolute paths or variables for paths
+- Include error handling in commands
+- Add timeouts for long-running operations
+- Use conditional checks where appropriate
+
+### 3. Variable Management
+- Document all required variables
+- Provide default values when possible
+- Use descriptive variable names
+- Consider variable scope and security
+
+### 4. Pre-checks
+- Verify all required tools
+- Check for required files and permissions
+- Validate environment variables
+- Test network connectivity if needed
+
+### 5. Security Considerations
+- Avoid storing sensitive data in templates
+- Use environment variables for secrets
+- Validate user input
+- Check file permissions
+
+## Template Management
+
+### Creating Templates
+```bash
+# Add a local template
+migraine template add [path]/[workflow_name].json
+
+# Load a remote template
+migraine template load https://example.com/[file_name].json
+```
+
+### Listing Templates
+```bash
+migraine template list
+```
+
+### Deleting Templates
+```bash
+migraine template delete template_name
+```
+
+## Common Issues and Solutions
+
+1. **Variable Not Found**
+   - Check variable names match exactly
+   - Verify variable is defined in config
+   - Ensure variables are provided when running
+
+2. **Command Failures**
+   - Check pre-requisites are installed
+   - Verify file permissions
+   - Check path variables are correct
+
+3. **Syntax Errors**
+   - Validate JSON syntax
+   - Check for missing commas
+   - Verify bracket matching

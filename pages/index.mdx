@@ -1,0 +1,56 @@
+![migraine](https://github.com/user-attachments/assets/1f1f90d0-3a85-44c8-b84a-b23838bf35c2)
+
+Migraine is a powerful CLI tool designed to solve the chronic headache of managing complex development workflows. It provides a robust framework for automating repetitive tasks, standardizing development environments, and streamlining deployment processes across teams.
+
+## Why Migraine?
+Development teams often face common challenges:
+
+- Complex setup procedures that need to be repeatedly executed
+- Environment-specific configurations that must be carefully managed
+- Multi-step deployment processes that are error-prone when done manually
+- Team-wide consistency in development workflows
+- Time lost in documentation and sharing of common procedures
+
+Migraine addresses these challenges by allowing you to:
+
+- Define workflows as code using simple JSON templates
+- Share and version control your automation procedures
+- Execute complex sequences of commands with built-in variable support
+- Verify prerequisites before running critical operations
+- Break down complex processes into discrete, manageable actions
+
+Key Features
+
+- **Template-Based Workflows**: Create reusable workflow templates that can be shared across your team
+- **Variable Substitution**: Use dynamic variables in your workflows for flexible execution
+- **Pre-flight Checks**: Ensure all prerequisites are met before workflow execution
+- **Discrete Actions**: Define and execute specific parts of your workflow independently
+- **Remote Templates**: Load workflow templates from URLs for easy sharing and distribution
+- **Simple Syntax**: Use familiar JSON format for defining workflows
+- **Cross-Platform**: Works on both macOS and Linux systems
+
+## Perfect For
+
+- DevOps engineers automating deployment procedures
+- Development teams standardizing environment setup
+- System administrators managing repeated operations
+- Anyone looking to automate complex command sequences
+
+## Quick Example
+- Here's a glimpse of how simple it is to use Migraine:
+
+```bash
+# Install Migraine
+brew install migraine
+
+# Create a new workflow from a template
+migraine workflow new
+
+# Run a workflow with variables
+migraine run my_workflow -v PROJECT_PATH=/path/to/project
+
+# Execute specific actions
+migraine run my_workflow -a deploy
+```
+
+Ready to eliminate your workflow headaches? Let's get started with the installation guide below.

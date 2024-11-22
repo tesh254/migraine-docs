@@ -1,0 +1,38 @@
+This guide will walk you through installing Migraine and creating your first workflow.
+
+## Installation
+
+### Prerequisites
+- Operating System: macOS (Apple Silicon/Intel) or Linux
+- Required tools: Either `curl` or `wget` for shell script installation
+
+### Installation Methods
+
+#### 1. Homebrew (Recommended for macOS/Linux)
+
+```bash
+# Add the Homebrew tap
+brew tap tesh254/migraine
+
+# Install migraine
+brew install migraine
+```
+
+#### 2. Shell Script
+
+Using curl:
+```bash
+curl -sSL https://raw.githubusercontent.com/tesh254/migraine/main/install.sh | bash
+```
+
+Using wget:
+```bash
+wget -qO- https://raw.githubusercontent.com/tesh254/migraine/main/install.sh | bash
+```
+
+### Verify Installation
+
+```bash
+# Check if migraine is installed correctly
+migraine --version
+```

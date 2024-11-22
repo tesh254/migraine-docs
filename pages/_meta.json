@@ -1,0 +1,17 @@
+{
+  "index": "Introduction",
+  "getting-started": "Getting Started",
+  "workflows": "Workflows",
+  "migraine-vs-other-tools": "Migraine vs Other tools",
+  "changelog": "Changelog",
+  "about": {
+    "title": "About Migraine",
+    "type": "page"
+  },
+  "contact": {
+    "title": "Contact ↗",
+    "type": "page",
+    "href": "https://bsky.app/profile/wchr.xyz",
+    "newWindow": true
+  }
+}

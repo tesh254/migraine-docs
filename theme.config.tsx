@@ -22,6 +22,16 @@ const config: DocsThemeConfig = {
   footer: {
     text: "Made with ❤️ by Erick Wachira",
   },
+  head: (
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta property="og:title" content="Migraine" />
+      <meta
+        property="og:description"
+        content="migraine is a robust CLI tool used to organize and automate complex workflows with templated commands. Users can define, store, and run sequences of shell commands efficiently, featuring variable substitution, pre-flight checks, and discrete actions"
+      />
+    </>
+  ),
 };
 
 export default config;

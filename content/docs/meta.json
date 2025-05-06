@@ -1,0 +1,12 @@
+{
+    "title": "Migraine",
+    "description": "All about migraine",
+    "root": false,
+    "pages": [
+        "index",
+        "getting-started",
+        "workflows",
+        "migraine-vs-other-tools",
+        "changelog"
+    ]
+}

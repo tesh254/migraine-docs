@@ -1,0 +1,10 @@
+{
+    "title": "Workflows",
+    "description": "Understanding Migraine workflows",
+    "root": false,
+    "pages": [
+        "understanding-templates",
+        "understanding-workflows",
+        "cli-command-reference"
+    ]
+}

@@ -1,0 +1,244 @@
+---
+title: CLI Command Reference
+description: Comprehensive guide to all available CLI commands and their usage.
+---
+
+Migraine is a robust CLI tool used to organize and automate complex workflows with templated commands. This reference documents all available commands and their usage.
+
+## Global Options
+
+- `--version`, `-v`: Print the version number
+- `--help`, `-h`: Display help information for any command
+
+## Basic Commands
+
+### `migraine` or `mgr`
+
+The base command displays the ASCII art logo and current version information.
+
+```bash
+migraine
+# or
+mgr
+```
+
+## Workflow Management
+
+### Template Commands
+
+#### Add New Template
+```bash
+migraine template add <template_file>
+# or
+mgr tmpl add path/to/template.json
+```
+
+Creates a new workflow template from a JSON file. The template name will be derived from the filename.
+
+#### List Templates
+```bash
+migraine template list
+# or
+mgr tmpl ls
+```
+
+Displays all available workflow templates.
+
+#### Delete Template
+```bash
+migraine template delete <template_name>
+# or
+mgr tmpl del template_name
+```
+
+Removes a template from the system.
+
+#### Load Remote Template
+```bash
+migraine template load <url>
+# or
+mgr tmpl load https://example.com/template.json
+```
+
+Loads a workflow template from a remote URL.
+
+### Workflow Commands
+
+#### Create New Workflow
+```bash
+migraine workflow new
+# or
+mgr wk new
+```
+
+Creates a new workflow from an existing template. The command will:
+1. Display available templates
+2. Prompt for template selection
+3. Request workflow name
+4. Handle any required variables
+
+#### List Workflows
+```bash
+migraine workflow list
+# or
+mgr wk ls
+```
+
+Shows all available workflows with their details including:
+- Workflow name and ID
+- Description
+- Pre-checks
+- Steps
+- Actions
+- Required variables
+- Available actions
+
+#### Delete Workflow
+```bash
+migraine workflow delete <workflow_id>
+# or
+mgr wk del workflow_id
+```
+
+Removes a workflow from the system.
+
+#### Workflow Information
+
+Displays detailed information about a specific workflow including:
+- Pre-checks
+- Steps
+- Actions
+- Required variables
+- Usage examples
+
+```bash
+migraine workflow info <workflow_id>
+# or
+mgr wk info workflow_id
+```
+
+Displays detailed information about a workflow including:
+- Name and ID
+- Description
+- Pre-checks with their commands
+- Steps with their commands
+- Available actions and their commands
+- Required variables with usage instructions
+- Command examples for running each action
+
+Output example:
+```
+Banking Setup (banking_setup)
+Setting up banking project environment
+
+pre-checks:
+  1. Check if Docker is installed
+     docker --version
+  2. Check if .env.example exists
+     test -f {{BANKING_PATH}}/.env.example
+
+steps:
+  1. Create .env file if missing
+     if [ ! -f {{BANKING_PATH}}/.env ]; then touch {{BANKING_PATH}}/.env; fi
+  run: mgr run banking_setup
+
+actions:
+  verify
+    Verify all environment variables are set
+    run: mgr run banking_setup -a verify
+  start
+    Start and build application
+    run: mgr run banking_setup -a start
+
+Required Variables:
+  • BANKING_PATH
+    Set with: -v BANKING_PATH=value
+```
+
+### Running Workflows
+
+#### Run Workflow
+```bash
+migraine run <workflow_id> [options]
+# or
+mgr run workflow_id [options]
+```
+
+Options:
+- `-v, --var KEY=VALUE`: Set variables for the workflow
+- `-a, --action ACTION_NAME`: Run specific action(s) instead of all steps
+
+Examples:
+```bash
+# Run entire workflow with variables
+mgr run banking_setup -v BANKING_PATH=/path/to/project
+
+# Run specific action
+mgr run banking_setup -a verify
+
+# Run multiple actions
+mgr run banking_setup -a verify -a start
+
+# Multiple variables
+mgr run deployment -v ENV=prod -v REGION=us-east-1
+```
+
+## Key-Value Store Management
+
+### View Store Logs
+```bash
+migraine kv logs
+# or
+mgr store logs
+```
+
+Displays recent logs from the key-value store (last 20 entries).
+
+## Workflow Template Format
+
+Templates should be in JSON format with the following structure:
+
+```json
+{
+  "version": "v1",
+  "name": "Workflow Name",
+  "description": "Workflow Description",
+  "pre_checks": [
+    {
+      "command": "command to run",
+      "description": "check description"
+    }
+  ],
+  "steps": [
+    {
+      "command": "command to run",
+      "description": "step description"
+    }
+  ],
+  "actions": {
+    "action_name": {
+      "command": "command to run",
+      "description": "action description"
+    }
+  },
+  "config": {
+    "variables": {},
+    "store_variables": true
+  }
+}
+```
+
+## Variable Substitution
+
+Variables in commands use the `{{VARIABLE_NAME}}` syntax. Example:
+
+```json
+{
+  "command": "docker run -v {{PROJECT_PATH}}:/app {{IMAGE_NAME}}"
+}
+```
+
+When running the workflow, provide values using the `-v` flag:
+```bash
+mgr run workflow_id -v PROJECT_PATH=/path/to/project -v IMAGE_NAME=node:16
+```

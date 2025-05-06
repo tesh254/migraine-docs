@@ -1,0 +1,314 @@
+---
+title: Understanding Workflows
+description: In Migraine, workflows and templates serve different but complementary purposes. While templates are the blueprints, workflows are the concrete instances created from these templates with specific configurations and variable values.
+---
+
+## Templates vs. Workflows
+
+### Templates
+- Reusable blueprints
+- Define structure and possible actions
+- Contain variable placeholders
+- Not directly executable
+- Shared across team/organization
+
+### Workflows
+- Concrete instances of templates
+- Contains actual variable values
+- Directly executable
+- Specific to a project/environment
+- Stored locally for reuse
+
+## Creating Workflows
+
+Workflows are created from templates using the CLI:
+
+```bash
+# Create a new workflow
+migraine workflow new
+
+# List existing workflows
+migraine workflow list
+
+# Delete a workflow
+migraine workflow delete workflow_id
+```
+
+## Workflow Lifecycle
+
+### 1. Creation
+```bash
+migraine workflow new
+```
+During creation, you'll:
+1. Select a template
+2. Name your workflow
+3. Provide variable values
+4. Configure any specific settings
+
+### 2. Usage
+```bash
+# Run entire workflow
+migraine run workflow_id
+
+# Run specific action
+migraine run workflow_id -a action_name
+
+# Run with variable override
+migraine run workflow_id -v KEY=VALUE
+```
+
+### 3. Management
+```bash
+# List workflows
+migraine workflow list
+
+# Delete workflow
+migraine workflow delete workflow_id
+```
+
+## Example: Template to Workflow
+
+### Original Template
+```json
+{
+  "name": "Node.js Project",
+  "description": "Setup Node.js project",
+  "steps": [
+    {
+      "command": "cd {{PROJECT_PATH}} && npm init -y",
+      "description": "initialize project"
+    },
+    {
+      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
+      "description": "install dependencies"
+    }
+  ],
+  "actions": {
+    "start": {
+      "command": "cd {{PROJECT_PATH}} && npm start",
+      "description": "start application"
+    }
+  }
+}
+```
+
+### Created Workflow
+```json
+{
+  "id": "my_node_app",
+  "name": "My Node App",
+  "steps": [
+    {
+      "command": "cd /home/user/projects/my-app && npm init -y",
+      "description": "initialize project"
+    },
+    {
+      "command": "cd /home/user/projects/my-app && npm install express typescript",
+      "description": "install dependencies"
+    }
+  ],
+  "actions": {
+    "start": {
+      "command": "cd /home/user/projects/my-app && npm start",
+      "description": "start application"
+    }
+  }
+}
+```
+
+## Key Differences
+
+### 1. Variable Resolution
+- **Templates**: Contain variable placeholders (`{{VARIABLE_NAME}}`)
+- **Workflows**: Contain resolved variable values
+
+### 2. Storage
+- **Templates**: Stored in template store, shareable
+- **Workflows**: Stored locally in workflow store
+
+### 3. Execution
+- **Templates**: Cannot be executed directly
+- **Workflows**: Can be run immediately
+
+### 4. Scope
+- **Templates**: Organization/team-wide
+- **Workflows**: Project/environment specific
+
+### 5. Reusability
+- **Templates**: Designed for multiple uses
+- **Workflows**: Configured for specific use
+
+## Working with Workflows
+
+### Running Workflows
+
+#### Complete Workflow
+```bash
+# Run all steps in order
+migraine run my_workflow
+```
+
+#### Specific Actions
+```bash
+# Run single action
+migraine run my_workflow -a start
+
+# Run multiple actions
+migraine run my_workflow -a test -a lint
+```
+
+#### With Variable Overrides
+```bash
+# Override stored variables
+migraine run my_workflow -v ENV=production -v PORT=3000
+```
+
+### Workflow Storage
+
+Workflows are stored in:
+- Location: `~/.mg_workflows/`
+- Format: JSON files
+- Naming: Based on workflow ID
+
+## Common Workflow Patterns
+
+### 1. Development Environment
+```bash
+# Create workflow from dev-env template
+migraine workflow new
+# Select dev-env template
+# Set PROJECT_PATH=/path/to/project
+
+# Start development environment
+migraine run dev_env -a start
+
+# Stop environment
+migraine run dev_env -a stop
+```
+
+### 2. Deployment Pipeline
+```bash
+# Create from deployment template
+migraine workflow new
+# Select deploy template
+# Set DEPLOY_ENV=production
+
+# Run deployment
+migraine run deploy -v VERSION=1.0.0
+```
+
+### 3. Database Operations
+```bash
+# Create from database template
+migraine workflow new
+# Select db-ops template
+# Set DATABASE_URL=postgresql://...
+
+# Run backup
+migraine run db_ops -a backup
+
+# Run restore
+migraine run db_ops -a restore
+```
+
+## Best Practices
+
+### 1. Workflow Organization
+- Use clear, descriptive workflow IDs
+- Group related workflows together
+- Document workflow purpose and usage
+- Keep workflows focused and specific
+
+### 2. Variable Management
+- Store commonly used variables
+- Override variables only when needed
+- Use environment-specific variables
+- Handle sensitive data carefully
+
+### 3. Workflow Maintenance
+- Regularly review and update workflows
+- Remove unused workflows
+- Keep variable values current
+- Test workflows periodically
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Workflow Not Found**
+```bash
+# List all workflows
+migraine workflow list
+
+# Check workflow ID spelling
+migraine run --help
+```
+
+2. **Action Not Found**
+```bash
+# List workflow details to see available actions
+migraine workflow list
+```
+
+3. **Variable Errors**
+```bash
+# Check required variables
+migraine workflow list
+
+# Provide missing variables
+migraine run workflow_id -v MISSING_VAR=value
+```
+
+### Runtime Issues
+
+1. **Command Failures**
+- Check variable values are correct
+- Verify paths exist
+- Ensure required tools are installed
+- Check permissions
+
+2. **Performance Issues**
+- Review command timeouts
+- Check resource usage
+- Verify network connectivity
+- Monitor disk space
+
+## Migration and Backup
+
+### Exporting Workflows
+- Workflows are stored as JSON
+- Can be version controlled
+- Easily shareable between teams
+- Portable between environments
+
+### Backing Up Workflows
+```bash
+# Backup workflow directory
+cp -r ~/.mg_workflows/ ~/workflow_backup/
+```
+
+## Advanced Usage
+
+### 1. Chaining Workflows
+```bash
+# Create a script to run multiple workflows
+#!/bin/bash
+migraine run setup
+migraine run deploy -v ENV=staging
+migraine run test
+```
+
+### 2. CI/CD Integration
+```yaml
+# GitHub Actions example
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Migraine
+        run: curl -sSL https://raw.githubusercontent.com/tesh254/migraine/main/install.sh | bash
+      - name: Run Deployment
+        run: migraine run deploy -v ENV=production
+```

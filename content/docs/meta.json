@@ -4,8 +4,9 @@
     "root": false,
     "pages": [
         "index",
-        "getting-started",
         "workflows",
+        "vault",
+        "cli-reference",
         "migraine-vs-other-tools",
         "changelog"
     ]

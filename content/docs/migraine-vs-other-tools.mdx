@@ -1,57 +1,36 @@
 ---
-title: Migraine vs. other tools
-description: Comparison between Migraine and other tools for automating workflows.
+title: Migraine vs Other Tools
+description: Comparing Migraine with other similar tools
 ---
 
-This guide compares Migraine with other popular workflow automation tools and traditional shell scripting approaches.
+## Overview
 
-## Quick Comparison Table
+Task automation is crucial for modern development workflows. While there are many tools available, each has its own strengths and weaknesses. This comparison will help you understand why Migraine may be the best choice for your automation needs.
 
-| Feature | Migraine | Shell Scripts | Make | Task Runners (npm/yarn) | GitHub Actions |
-|---------|----------|---------------|------|------------------------|----------------|
-| Variable Management | ✅ Built-in | ⚠️ Manual | ⚠️ Basic | ✅ Via package.json | ✅ Via yaml |
-| Pre-flight Checks | ✅ Built-in | ⚠️ Manual | ❌ No | ❌ No | ⚠️ Manual |
-| Template System | ✅ Native | ❌ No | ❌ No | ❌ No | ✅ Via yaml |
-| Remote Loading | ✅ Yes | ❌ No | ❌ No | ✅ Via npm | ✅ Via yaml |
-| Cross-platform | ✅ Yes | ⚠️ Limited | ✅ Yes | ✅ Yes | ✅ Yes |
-| Workflow Validation | ✅ Built-in | ❌ No | ❌ No | ❌ No | ✅ Schema |
-| Discrete Actions | ✅ Built-in | ⚠️ Manual | ✅ Targets | ✅ Scripts | ✅ Jobs |
-| Local Storage | ✅ Yes | ❌ No | ❌ No | ✅ package.json | ❌ No |
-| Version Control | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
+## Migraine vs. Shell Scripts
 
-## Detailed Comparisons
+### Traditional Shell Scripts
 
-### Migraine vs Shell Scripts
+Many developers create custom shell scripts for automation tasks. While functional, this approach has several limitations:
 
-#### Shell Scripts
-👍 Advantages:
-- Universal availability
-- No additional dependencies
-- Full system access
-- Maximum flexibility
+#### Limitations of Shell Scripts
+- **Hard to maintain**: Scripts become complex and difficult to update
+- **Poor error handling**: Basic error handling requires significant extra code
+- **Limited documentation**: No built-in way to document steps and purpose
+- **Poor variable management**: Manual parsing of arguments and environment variables
+- **Inconsistent structure**: Each script has different conventions
+- **No pre-checks**: Validation must be manually implemented
+- **Hard to compose**: Difficult to chain or combine scripts
 
-👎 Disadvantages:
-- No built-in templating
-- Manual variable management
-- Platform-specific syntax
-- No standardized structure
-- Error-prone
-- Limited reusability
-
-#### Migraine
-👍 Advantages:
-- Structured workflow definition
-- Built-in variable management
-- Pre-flight validation
-- Template system
-- Cross-platform compatibility
-- Reusable components
-- Standardized format
-
-👎 Disadvantages:
-- Additional tool to install
-- Learning curve for syntax
-- Less flexible than raw shell scripts
+#### Advantages of Migraine over Shell Scripts
+- **Structured format**: YAML provides consistent, readable structure
+- **Built-in validation**: Pre-checks section for automatic validation
+- **Rich documentation**: Comments and descriptions are first-class features
+- **Advanced variable management**: Vault system with scope awareness
+- **Error handling**: Automatic failure handling and clear error messages
+- **Composability**: Easy to run specific actions or steps
+- **Automatic discovery**: Finds workflow files automatically
+- **Standardized execution**: Consistent command interface
 
 ### Example Comparison
 
@@ -59,238 +38,392 @@ This guide compares Migraine with other popular workflow automation tools and tr
 ```bash
 #!/bin/bash
 
-# Manual variable definition
-PROJECT_PATH=$1
-DEPENDENCIES=$2
+# Deploy script
+echo "Starting deployment process..."
 
-# Manual error checking
-if [ -z "$PROJECT_PATH" ]; then
-    echo "Error: PROJECT_PATH is required"
+# Validate inputs
+if [ -z "$SERVER" ]; then
+    echo "Error: SERVER environment variable required" >&2
     exit 1
 fi
 
-# Manual directory check
-if [ ! -d "$PROJECT_PATH" ]; then
-    mkdir -p "$PROJECT_PATH"
+if [ -z "$APP_NAME" ]; then
+    echo "Error: APP_NAME environment variable required" >&2
+    exit 1
 fi
 
-# Main logic
-cd "$PROJECT_PATH" || exit
-npm init -y
-if [ -n "$DEPENDENCIES" ]; then
-    npm install "$DEPENDENCIES"
+# Check if required tools exist
+if ! command -v rsync &> /dev/null; then
+    echo "Error: rsync is required but not found" >&2
+    exit 1
 fi
+
+if ! command -v ssh &> /dev/null; then
+    echo "Error: ssh is required but not found" >&2
+    exit 1
+fi
+
+# Test SSH connectivity
+if ! ssh -q "$SERVER" exit; then
+    echo "Error: Cannot connect to server $SERVER" >&2
+    exit 1
+fi
+
+# Build the application
+echo "Building application..."
+npm run build
+
+# Package for deployment
+echo "Packaging application..."
+tar -czf app.tar.gz dist/
+
+# Deploy
+echo "Deploying to $SERVER..."
+rsync -av app.tar.gz "$SERVER:/tmp/"
+
+echo "Deployment complete!"
 ```
 
-#### Migraine Approach
-```json
-{
-  "name": "Node.js Setup",
-  "pre_checks": [
-    {
-      "command": "test -d {{PROJECT_PATH}} || mkdir -p {{PROJECT_PATH}}",
-      "description": "ensure project directory exists"
-    }
-  ],
-  "steps": [
-    {
-      "command": "cd {{PROJECT_PATH}} && npm init -y",
-      "description": "initialize project"
-    },
-    {
-      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
-      "description": "install dependencies"
-    }
-  ]
-}
+#### Migraine YAML Approach
+```yaml
+name: deploy-app
+description: Deploy application to server with full validation
+
+pre_checks:
+  - command: "which rsync"
+    description: "Verify rsync is available"
+  - command: "which ssh"
+    description: "Verify ssh is available"
+  - command: "ssh -q {{server}} exit"
+    description: "Test server connectivity"
+  - command: "[ -n '{{server}}' ] || (echo 'SERVER required' && exit 1)"
+    description: "Validate server variable"
+  - command: "[ -n '{{app_name}}' ] || (echo 'APP_NAME required' && exit 1)"
+    description: "Validate app_name variable"
+
+steps:
+  - command: "echo 'Starting deployment process...'"
+    description: "Show start message"
+  - command: "npm run build"
+    description: "Build the application"
+  - command: "tar -czf app.tar.gz dist/"
+    description: "Package for deployment"
+  - command: "rsync -av app.tar.gz {{user}}@{{server}}:/tmp/"
+    description: "Deploy package to server"
+
+actions:
+  rollback:
+    command: "ssh {{user}}@{{server}} 'cd /opt/app && git checkout HEAD~1'"
+    description: "Rollback to previous version"
+  cleanup:
+    command: "rm -f app.tar.gz"
+    description: "Clean up local package"
+
+config:
+  variables:
+    server:
+      - "required"
+    user:
+      - "required"
+  store_variables: false
+
+use_vault: true
 ```
 
-### Migraine vs Make
+## Migraine vs. Makefiles
 
-#### Make
-👍 Advantages:
-- Widely available
-- Good for build systems
-- Target dependency management
-- Parallel execution
+### Makefiles
 
-👎 Disadvantages:
-- Complex syntax
-- Limited template support
-- No built-in variable validation
-- Primarily focused on build processes
+Make is a powerful build automation tool, but has specific limitations for general workflow automation:
 
-#### Migraine
-👍 Advantages:
-- Modern JSON-based syntax
-- Built for workflow automation
-- Strong variable management
-- Remote template loading
-- Pre-flight validation
+#### Limitations of Makefiles
+- **Unix-focused**: Limited Windows support and compatibility
+- **Complex syntax**: Non-intuitive syntax for non-build tasks
+- **Dependency-based**: Designed for file generation, not general workflows
+- **Limited variable management**: Basic variable substitution only
+- **Poor cross-platform**: Challenging to write portable Makefiles
+- **No built-in validation**: Pre-checks must be manually implemented
 
-👎 Disadvantages:
-- Not designed for build systems
-- No parallel execution
-- Newer, smaller community
+#### Advantages of Migraine over Makefiles
+- **YAML syntax**: Modern, readable configuration
+- **Cross-platform**: Works on macOS, Linux, and Windows
+- **Workflow-focused**: Designed specifically for workflow automation
+- **Advanced variable management**: Vault system with scope awareness
+- **Built-in pre-checks**: Dedicated validation section
+- **Rich documentation**: Descriptions and comments as first-class features
+- **Automatic discovery**: Finds workflows automatically
+- **Modern CLI**: Intuitive command interface
 
 ### Example Comparison
 
 #### Makefile Approach
 ```makefile
-PROJECT_PATH ?= .
-DEPENDENCIES ?=
+# Deploy targets
+.PHONY: deploy precheck build
 
-.PHONY: setup install
+# Variables
+SERVER ?= localhost
+APP_NAME ?= myapp
 
-setup:
-    mkdir -p $(PROJECT_PATH)
-    cd $(PROJECT_PATH) && npm init -y
+precheck:
+	@echo "Checking prerequisites..."
+	@which rsync || (echo "rsync not found" && exit 1)
+	@ssh -q $(SERVER) exit || (echo "Cannot connect to server" && exit 1)
+	@test -n "$(SERVER)" || (echo "SERVER required" && exit 1)
 
-install:
-    cd $(PROJECT_PATH) && npm install $(DEPENDENCIES)
+build: precheck
+	@echo "Building application..."
+	npm run build
+
+deploy: build
+	@echo "Deploying to $(SERVER)..."
+	tar -czf app.tar.gz dist/
+	rsync -av app.tar.gz $(SERVER):/tmp/
+
+rollback:
+	@echo "Rolling back..."
+	ssh $(SERVER) 'cd /opt/app && git checkout HEAD~1'
 ```
 
 #### Migraine Approach
-```json
-{
-  "name": "Project Setup",
-  "actions": {
-    "setup": {
-      "command": "mkdir -p {{PROJECT_PATH}} && cd {{PROJECT_PATH}} && npm init -y",
-      "description": "initialize project"
-    },
-    "install": {
-      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
-      "description": "install dependencies"
-    }
-  }
-}
+```yaml
+name: deploy
+description: Deploy application with validation and rollback
+
+pre_checks:
+  - command: "which rsync"
+    description: "Verify rsync is available"
+  - command: "ssh -q {{server}} exit"
+    description: "Test server connectivity"
+  - command: "[ -n '{{server}}' ] || (echo 'SERVER required' && exit 1)"
+    description: "Validate server variable"
+
+steps:
+  - command: "echo 'Building application...'"
+    description: "Show build message"
+  - command: "npm run build"
+    description: "Build the application"
+  - command: "tar -czf app.tar.gz dist/"
+    description: "Package for deployment"
+  - command: "rsync -av app.tar.gz {{server}}:/tmp/"
+    description: "Deploy package"
+
+actions:
+  deploy:
+    command: "ssh {{server}} 'tar -xzf /tmp/app.tar.gz -C /opt/app && systemctl restart {{app_name}}'"
+    description: "Complete deployment"
+  rollback:
+    command: "ssh {{server}} 'cd /opt/app && git checkout HEAD~1'"
+    description: "Rollback to previous version"
+  cleanup:
+    command: "rm -f app.tar.gz && ssh {{server}} 'rm -f /tmp/app.tar.gz'"
+    description: "Clean up files"
+
+variables:
+  - server
+  - app_name
+
+use_vault: true
 ```
 
-### Migraine vs NPM Scripts
+## Migraine vs. npm Scripts
 
-#### NPM Scripts
-👍 Advantages:
-- Integrated with Node.js projects
-- Simple syntax
-- Package.json integration
-- Huge ecosystem
+### npm Scripts
 
-👎 Disadvantages:
-- Limited to Node.js projects
-- Basic script running
-- No built-in templating
-- Limited workflow control
+npm scripts are popular in Node.js projects but have limitations outside the JS ecosystem:
 
-#### Migraine
-👍 Advantages:
-- Language agnostic
-- Advanced workflow control
-- Template system
-- Pre-flight checks
-- Variable management
+#### Limitations of npm Scripts
+- **Language-specific**: Designed for the Node.js ecosystem only
+- **Poor variable management**: Only environment variables
+- **No workflow organization**: All scripts in single package.json
+- **Limited validation**: No built-in pre-checks
+- **No scope awareness**: All variables global
+- **Complex chaining**: Difficult to create complex workflows
 
-👎 Disadvantages:
-- Separate tool installation
-- Not integrated with package managers
-- Additional configuration files
+#### Advantages of Migraine over npm Scripts
+- **Language agnostic**: Works with any technology stack
+- **Advanced variable management**: Vault with global/project/workflow scopes
+- **Organized workflows**: Multiple files, clear separation
+- **Built-in validation**: Dedicated pre-checks section
+- **Rich documentation**: Descriptions and comments
+- **Better composition**: Actions and workflow dependencies
 
 ### Example Comparison
 
-#### NPM Scripts Approach
+#### npm Scripts Approach
 ```json
 {
   "scripts": {
-    "setup": "mkdir -p $PROJECT_PATH && cd $PROJECT_PATH && npm init -y",
-    "install-deps": "cd $PROJECT_PATH && npm install $DEPENDENCIES"
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "jest",
+    "test:integration": "cypress run",
+    "deploy": "npm run build && npm run deploy:server && npm run notify:slack",
+    "deploy:server": "rsync -av ./dist/ user@server:/var/www/",
+    "notify:slack": "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"Deployment successful\"}' $SLACK_WEBHOOK"
   }
 }
 ```
 
 #### Migraine Approach
-```json
-{
-  "name": "Node.js Project Setup",
-  "pre_checks": [
-    {
-      "command": "node --version",
-      "description": "check node installation"
-    }
-  ],
-  "actions": {
-    "setup": {
-      "command": "mkdir -p {{PROJECT_PATH}} && cd {{PROJECT_PATH}} && npm init -y",
-      "description": "initialize project"
-    },
-    "install": {
-      "command": "cd {{PROJECT_PATH}} && npm install {{DEPENDENCIES}}",
-      "description": "install dependencies"
-    }
-  }
-}
+```yaml
+name: project-workflows
+description: Complete project automation
+
+pre_checks:
+  - command: "which npm"
+    description: "Verify npm is available"
+  - command: "which rsync"
+    description: "Verify rsync is available"
+
+workflows:
+  build:
+    description: Build the entire project
+    steps:
+      - command: "echo 'Building frontend...'"
+        description: "Frontend build start"
+      - command: "cd frontend && npm run build"
+        description: "Build frontend application"
+      - command: "echo 'Building backend...'"
+        description: "Backend build start"
+      - command: "cd backend && npm run build"
+        description: "Build backend application"
+
+  test:
+    description: Run complete test suite
+    steps:
+      - command: "npm run test:unit"
+        description: "Run unit tests"
+      - command: "npm run test:integration"
+        description: "Run integration tests"
+
+  deploy:
+    description: Deploy to production
+    pre_checks:
+      - command: "npm run test"
+        description: "Run tests before deployment"
+    steps:
+      - command: "npm run build"
+        description: "Build application"
+      - command: "npm run deploy:server"
+        description: "Deploy to server"
+      - command: "npm run notify:slack"
+        description: "Send notification"
+
+  deploy-server:
+    description: Deploy files to server
+    steps:
+      - command: "rsync -av ./dist/ {{deploy_user}}@{{deploy_server}}:/var/www/"
+        description: "Sync files to server"
+
+  notify-slack:
+    description: Send deployment notification
+    steps:
+      - command: "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"Deployment successful\"}' {{slack_webhook}}"
+        description: "Send Slack notification"
+
+variables:
+  - deploy_server
+  - deploy_user
+  - slack_webhook
+
+use_vault: true
 ```
 
-## When to Choose Migraine
+## Migraine vs. Taskfile (Task)
 
-### Choose Migraine When You Need:
-- Reusable workflow templates
-- Strong variable management
-- Pre-flight validation
-- Cross-platform compatibility
-- Team standardization
-- Remote template sharing
-- Workflow versioning
+### Taskfiles
 
-### Consider Alternatives When:
-- You need maximum flexibility (Shell Scripts)
-- You're focused on build systems (Make)
-- You're working exclusively with Node.js (NPM Scripts)
-- You need CI/CD integration (GitHub Actions)
-- You need parallel execution (Make/GitHub Actions)
+Task is a modern task runner with TOML syntax, but still has some limitations:
 
-## Migration Guides
+#### Limitations of Taskfiles
+- **TOML syntax**: Less familiar than YAML for many users
+- **Limited variable scoping**: No built-in vault system
+- **No automatic discovery**: Must specify exact task location
+- **Less workflow-focused**: More oriented toward build tasks
+- **Smaller ecosystem**: Less tooling and editor support
 
-### From Shell Scripts to Migraine
-1. Identify repeated patterns in scripts
-2. Extract variables and commands
-3. Create workflow templates
-4. Add pre-flight checks
-5. Define discrete actions
+#### Advantages of Migraine over Taskfiles
+- **YAML syntax**: More familiar and better tooling support
+- **Advanced variable management**: Built-in vault with scopes
+- **Automatic discovery**: Finds workflows automatically
+- **Workflow-centric**: Designed specifically for complex workflows
+- **Rich documentation**: First-class support for descriptions
+- **Pre-checks**: Dedicated validation section
 
-### From Make to Migraine
-1. Convert targets to actions
-2. Transform variables to Migraine format
-3. Add pre-flight checks
-4. Create workflow templates
+## Migraine vs. Rake
 
-### From NPM Scripts to Migraine
-1. Convert scripts to actions
-2. Extract environment variables
-3. Add pre-flight validation
-4. Create reusable templates
+### Rakefiles
 
-## Best Practices for Migration
+Rake is Ruby's make tool, but has Ruby-specific requirements:
 
-1. Start with Simple Workflows
-   - Convert basic scripts first
-   - Add complexity gradually
-   - Test thoroughly
+#### Limitations of Rakefiles
+- **Ruby dependency**: Requires Ruby installation
+- **Limited scope**: Primarily for Ruby projects
+- **Complex syntax**: Ruby code mixed with build logic
+- **Platform issues**: Ruby compatibility across platforms
+- **Learning curve**: Requires Ruby knowledge
 
-2. Use Hybrid Approach Initially
-   - Keep complex scripts
-   - Migrate gradually
-   - Maintain backwards compatibility
+#### Advantages of Migraine over Rakefiles
+- **No language dependency**: Standalone binary
+- **Cross-language**: Works with any technology stack
+- **Simple syntax**: YAML configuration
+- **No installation**: Single binary executable
+- **Go-based**: Consistent across platforms
 
-3. Document Changes
-   - Note differences
-   - Update team documentation
-   - Provide migration guides
+## Why Choose Migraine?
 
-4. Focus on Benefits
-   - Enhance reusability
-   - Add pre-flight checks
-   - Improve variable management
+### 1. Modern, Readable Configuration
+- YAML syntax is more readable than Make, TOML, or Ruby syntax
+- Rich commenting and documentation capabilities
+- Clear separation of concerns (pre-checks, steps, actions)
+
+### 2. Advanced Variable Management
+- Vault system with global/project/workflow scoping
+- Automatic variable resolution with fallbacks
+- Secure storage system (with upcoming encryption)
+
+### 3. Built-in Validation
+- Dedicated pre-checks section for validation
+- Automatic workflow validation
+- Clear error reporting
+
+### 4. Automatic Discovery
+- Finds workflow files automatically
+- No need to specify exact paths
+- Supports multiple workflow file locations
+
+### 5. Cross-Platform Consistency
+- Built with Go for consistent behavior across platforms
+- Single binary executable
+- No runtime dependencies
+
+### 6. Comprehensive CLI
+- Intuitive command structure
+- Rich help and documentation
+- Consistent interface across operations
+
+### 7. Workflow-Centric Design
+- Specifically designed for complex workflows
+- Supports long-running and multi-step processes
+- Action-based execution for flexibility
+
+### 8. Professional Features
+- Migration from legacy formats
+- File-based and database storage
+- Environment-specific configurations
+- Variable transformation capabilities
 
 ## Conclusion
 
-Migraine provides a modern approach to workflow automation, combining the best aspects of traditional tools with modern features like templating and validation. While it may not replace all use cases for traditional tools, it offers significant advantages for teams looking to standardize and automate their development workflows.
+While shell scripts, Make, npm scripts, Task, and Rake all have their place, Migraine is specifically designed for complex workflow automation with features like:
+- Structured, readable configuration
+- Advanced variable management with vault
+- Built-in validation and error handling
+- Professional workflow organization
+- Cross-platform consistency
+- Modern CLI experience
+
+For teams looking to manage complex automation workflows with professional tooling, clear documentation, and robust variable management, Migraine provides significant advantages over traditional approaches.

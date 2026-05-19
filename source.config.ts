@@ -5,8 +5,6 @@ import {
   metaSchema,
 } from 'fumadocs-mdx/config';
 
-// You can customise Zod schemas for frontmatter and `meta.json` here
-// see https://fumadocs.vercel.app/docs/mdx/collections#define-docs
 export const docs = defineDocs({
   docs: {
     schema: frontmatterSchema,
@@ -16,8 +14,116 @@ export const docs = defineDocs({
   },
 });
 
+const migraineGrammar = {
+  name: 'mg',
+  scopeName: 'source.mg',
+  patterns: [
+    { include: '#comment' },
+    { include: '#block-name' },
+    { include: '#section-name' },
+    { include: '#property' },
+    { include: '#string-double' },
+    { include: '#string-backtick' },
+    { include: '#boolean' },
+    { include: '#number' },
+    { include: '#variable-reference' },
+    { include: '#operator' },
+    { include: '#punctuation' },
+  ],
+  repository: {
+    comment: {
+      name: 'comment.line.number-sign.mg',
+      match: '#.*$',
+    },
+    'block-name': {
+      name: 'keyword.control.block.mg',
+      match: '\\b(metadata|variables|workflow|config)\\b',
+    },
+    'section-name': {
+      name: 'keyword.control.section.mg',
+      match: '\\b(pre_checks|steps|actions)\\b',
+    },
+    property: {
+      name: 'variable.other.property.mg',
+      match: '\\b(cmd|desc|description|name|on_fail|on_success|store_variables|store_logs|background|global)\\b',
+    },
+    'string-double': {
+      name: 'string.quoted.double.mg',
+      begin: '"',
+      end: '"',
+      patterns: [
+        {
+          name: 'constant.character.escape.mg',
+          match: '\\\\.',
+        },
+        {
+          name: 'variable.other.template.mg',
+          match: '\\{\\{[^}]+\\}\\}',
+        },
+      ],
+    },
+    'string-backtick': {
+      name: 'string.quoted.other.backtick.mg',
+      begin: '`',
+      end: '`',
+      patterns: [
+        {
+          name: 'variable.other.template.mg',
+          match: '\\{\\{[^}]+\\}\\}',
+        },
+      ],
+    },
+    boolean: {
+      name: 'constant.language.boolean.mg',
+      match: '\\b(true|false)\\b',
+    },
+    number: {
+      name: 'constant.numeric.mg',
+      match: '\\b\\d+(\\.\\d+)?\\b',
+    },
+    'variable-reference': {
+      name: 'string.unquoted.variable-ref.mg',
+      match: '\\b(args:[A-Za-z_][A-Za-z0-9_]*|env:[A-Za-z_][A-Za-z0-9_]*|vault:[A-Za-z_][A-Za-z0-9_]*|action:[A-Za-z_][A-Za-z0-9_]*|run:[A-Za-z_][A-Za-z0-9_-]*)\\b',
+    },
+    operator: {
+      name: 'keyword.operator.assignment.mg',
+      match: '=',
+    },
+    punctuation: {
+      patterns: [
+        {
+          name: 'punctuation.section.block.begin.mg',
+          match: '\\{',
+        },
+        {
+          name: 'punctuation.section.block.end.mg',
+          match: '\\}',
+        },
+        {
+          name: 'punctuation.section.array.begin.mg',
+          match: '\\[',
+        },
+        {
+          name: 'punctuation.section.array.end.mg',
+          match: '\\]',
+        },
+        {
+          name: 'punctuation.separator.mg',
+          match: ',',
+        },
+      ],
+    },
+  },
+};
+
 export default defineConfig({
   mdxOptions: {
-    // MDX options
+    rehypeCodeOptions: {
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
+      langs: [migraineGrammar as any],
+    },
   },
 });

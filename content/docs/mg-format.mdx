@@ -1,0 +1,297 @@
+---
+title: ".mg Format Reference"
+description: "The Migraine DSL (.mg) for defining workflows in a native, concise syntax"
+---
+
+The `.mg` format is Migraine's native DSL — a concise, structured alternative to YAML for defining workflows. It provides syntax highlighting, editor integration, and a more ergonomic way to write workflows.
+
+## Overview
+
+While Migraine supports YAML workflows (`.yaml` / `.yml`), the `.mg` format offers:
+
+- **Concise syntax** — less boilerplate than YAML
+- **Comments** — `#` line comments for documentation
+- **Native hooks** — `on_fail` and `on_success` on every step and pre-check
+- **Rich strings** — double-quoted `"..."` and backtick `` `...` `` strings for shell commands
+- **Editor support** — syntax highlighting, diagnostics, completions, and hover docs via LSP
+
+## File Extension
+
+Save workflow files with the `.mg` extension (e.g., `deploy.mg`). Migraine discovers `.mg` files alongside `.yaml`/`.yml` files in the `./workflows/` directory.
+
+## Format Reference
+
+### Blocks
+
+A `.mg` file consists of four top-level blocks:
+
+| Block | Required | Description |
+|-------|----------|-------------|
+| `metadata {}` | Yes | Workflow name and description |
+| `variables {}` | No | Variable definitions with resolution prefixes |
+| `workflow {}` | Yes | Execution definition (pre-checks, steps, actions) |
+| `config {}` | No | Configuration options |
+
+### Metadata Block
+
+```mg
+metadata {
+    name = "deploy-app"
+    desc = "Build and deploy the application"
+}
+```
+
+- `name` — workflow identifier (required)
+- `desc` or `description` — human-readable description
+
+### Variables Block
+
+```mg
+variables {
+    app_name = "args:APP_NAME"
+    deploy_host = "env:DEPLOY_HOST"
+    slack_webhook = "vault:SLACK_WEBHOOK"
+    debug = true
+    timeout = 300
+}
+```
+
+Variable resolution prefixes:
+
+| Prefix | Resolution | Example |
+|--------|-----------|---------|
+| `args:` | CLI flag argument | `"args:APP_NAME"` → resolved from `-v APP_NAME=value` |
+| `env:` | Environment variable | `"env:HOME"` → `$HOME` |
+| `vault:` | Migraine vault | `"vault:SECRET_KEY"` → stored vault value |
+| *(none)* | Static string | `"production"` → literal value |
+
+Variables support string, boolean (`true`/`false`), and number values. All variables are available in commands via `{{variable_name}}` template syntax.
+
+### Workflow Block
+
+The `workflow` block contains three sections:
+
+#### Pre-Checks
+
+```mg
+workflow {
+    pre_checks [
+        {
+            cmd = `docker info`
+            desc = "Verify Docker daemon is running"
+            on_fail = "action:notify_failure"
+        }
+    ]
+}
+```
+
+- `cmd` (required) — shell command to execute
+- `desc` — human-readable description
+- `on_fail` — hook to run when the check fails (`action:name` or `run:command`)
+- `on_success` — hook to run when the check passes
+
+If any pre-check fails, the workflow stops. Hooks are optional.
+
+#### Steps
+
+```mg
+workflow {
+    steps [
+        {
+            cmd = `docker build -t {{app_name}}:{{env}} .`
+            desc = "Build the Docker image"
+            on_fail = "action:notify_failure"
+        }
+    ]
+}
+```
+
+- `cmd` (required) — shell command, supports `{{variable}}` substitution
+- `desc` — description shown during execution
+- `on_fail` — hook on step failure
+- `on_success` — hook on step success
+
+#### Actions
+
+```mg
+workflow {
+    actions {
+        notify_failure {
+            cmd = `curl -X POST -H 'Content-type: application/json' \
+                 --data '{"text":"Deploy failed!"}' {{slack_webhook}}`
+            desc = "Post failure alert to Slack"
+        }
+        rollback {
+            cmd = `ssh deploy@{{deploy_host}} "kubectl rollout undo deployment/{{app_name}}"`
+            desc = "Roll back to previous deployment"
+            on_fail = "action:notify_failure"
+        }
+    }
+}
+```
+
+Actions are named, reusable commands triggered by hooks. They themselves support `on_fail` and `on_success` for chaining.
+
+### Hook References
+
+Hooks reference actions or inline commands:
+
+| Hook format | Behavior |
+|-------------|----------|
+| `"action:name"` | Runs the named action defined in `actions {}` |
+| `"run:echo done"` | Runs the inline command after `run:` |
+
+### Config Block
+
+```mg
+config {
+    store_variables = true
+    store_logs = true
+    background = false
+    global = false
+}
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `store_variables` | bool | `false` | Persist resolved variables between runs |
+| `store_logs` | bool | `false` | Store execution logs |
+| `background` | bool | `false` | Run workflow in background |
+| `global` | bool | `false` | Make workflow available globally |
+
+## Full Example
+
+```mg
+# deploy.mg - Production deployment workflow
+metadata {
+    name = "deploy-app"
+    desc = "Build and deploy the web application to staging"
+}
+
+variables {
+    app_name = "args:APP_NAME"
+    env = "args:ENV"
+    deploy_host = "env:DEPLOY_HOST"
+    slack_webhook = "vault:SLACK_WEBHOOK"
+}
+
+workflow {
+    pre_checks [
+        {
+            cmd = `docker info`
+            desc = "Verify Docker daemon is running"
+            on_fail = "action:notify_failure"
+        }
+    ]
+
+    steps [
+        {
+            cmd = `docker build -t {{app_name}}:{{env}} .`
+            desc = "Build the Docker image"
+            on_fail = "action:notify_failure"
+        }
+        {
+            cmd = `docker push {{app_name}}:{{env}}`
+            desc = "Push image to registry"
+            on_fail = "action:notify_failure"
+        }
+        {
+            cmd = `ssh deploy@{{deploy_host}} "kubectl set image deployment/{{app_name}} {{app_name}}={{app_name}}:{{env}}"`
+            desc = "Roll out the new image"
+            on_success = "action:notify_success"
+            on_fail = "action:rollback"
+        }
+    ]
+
+    actions {
+        notify_failure {
+            cmd = `curl -X POST -H 'Content-type: application/json' --data '{"text":"Deploy failed!"}' {{slack_webhook}}`
+            desc = "Post failure alert to Slack"
+        }
+        notify_success {
+            cmd = `curl -X POST -H 'Content-type: application/json' --data '{"text":"Deploy succeeded!"}' {{slack_webhook}}`
+            desc = "Post success message to Slack"
+        }
+        rollback {
+            cmd = `ssh deploy@{{deploy_host}} "kubectl rollout undo deployment/{{app_name}}"`
+            desc = "Roll back to previous deployment"
+            on_fail = "action:notify_failure"
+        }
+    }
+}
+
+config {
+    store_variables = true
+    store_logs = true
+    background = false
+    global = false
+}
+```
+
+## Syntax Reference
+
+### Comments
+
+Lines starting with `#` are comments:
+
+```mg
+# This is a comment
+metadata {  # inline comments also work
+    name = "my-workflow"
+}
+```
+
+### Strings
+
+Two string types are supported:
+
+- `"double quoted"` — standard strings with `\"` escape support
+- `` `backtick quoted` `` — raw strings, ideal for shell commands containing quotes and special characters
+
+```mg
+cmd = "echo \"hello world\""    # escaped quotes
+cmd = `echo "hello world"`      # no escaping needed
+```
+
+### Template Variables
+
+Use `{{variable_name}}` inside any command string:
+
+```mg
+cmd = `ssh {{user}}@{{host}} "systemctl restart {{service}}"`
+```
+
+### Punctuation
+
+| Symbol | Meaning |
+|--------|---------|
+| `=` | Key-value assignment |
+| `{ }` | Block or atom delimiter |
+| `[ ]` | List delimiter (for pre_checks and steps) |
+| `,` | Optional separator between list items and action blocks |
+
+## YAML vs .mg Comparison
+
+| Feature | YAML | .mg |
+|---------|------|-----|
+| Syntax | Indentation-based | Brace-delimited |
+| Comments | `#` | `#` |
+| Hook support | Limited | `on_fail` / `on_success` on every atom |
+| Shell commands | Must quote carefully | Backtick raw strings |
+| Editor support | Generic YAML | Dedicated LSP |
+| File discovery | `*.yaml`, `*.yml` | `*.mg` |
+
+## Running .mg Workflows
+
+`.mg` files are discovered automatically alongside YAML workflows:
+
+```bash
+# List all workflows (including .mg files)
+migraine workflow list
+
+# Run a .mg workflow by name
+migraine run deploy-app
+
+# Run with variables
+migraine run deploy-app -v APP_NAME=myapp -v ENV=staging
+```

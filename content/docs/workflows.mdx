@@ -95,7 +95,62 @@ Design workflows with error handling and validation to make them robust.
 Migraine automatically discovers workflow files in:
 - `./workflows/` directory
 - Current directory (`.`)
-- Files with `.yaml` or `.yml` extensions
+- Files with `.yaml`, `.yml`, or `.mg` extensions
+
+## Workflow Formats
+
+Migraine supports two workflow formats:
+
+### YAML Format (`.yaml` / `.yml`)
+
+The original format, shown in the examples above. Familiar to most developers and supports comments.
+
+### Migraine DSL (`.mg`)
+
+A native, concise format with built-in hook support (`on_fail`/`on_success`), backtick strings for shell commands, and full LSP editor integration. See the [.mg Format Reference](/docs/mg-format) for details.
+
+Example `.mg` workflow:
+
+```mg
+metadata {
+    name = "deploy-app"
+    desc = "Deploy the application"
+}
+
+variables {
+    env = "args:ENV"
+    deploy_host = "env:DEPLOY_HOST"
+}
+
+workflow {
+    pre_checks [
+        {
+            cmd = `docker info`
+            desc = "Verify Docker is running"
+            on_fail = "action:notify_failure"
+        }
+    ]
+
+    steps [
+        {
+            cmd = `docker build -t app:{{env}} .`
+            desc = "Build Docker image"
+            on_fail = "action:notify_failure"
+        }
+    ]
+
+    actions {
+        notify_failure {
+            cmd = `echo "Deploy failed"`
+        }
+    }
+}
+
+config {
+    store_variables = true
+    store_logs = true
+}
+```
 
 ## Variable Substitution
 

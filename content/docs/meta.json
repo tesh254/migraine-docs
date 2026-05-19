@@ -5,6 +5,9 @@
     "pages": [
         "index",
         "workflows",
+        "mg-format",
+        "editor-setup",
+        "lsp",
         "vault",
         "cli-reference",
         "migraine-vs-other-tools",

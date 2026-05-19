@@ -1,0 +1,83 @@
+---
+title: LSP Server
+description: "Migraine Language Server Protocol server for editor integration"
+---
+
+The Migraine LSP server provides real-time language intelligence for `.mg` workflow files inside any LSP-compatible editor.
+
+## Starting the Server
+
+```bash
+migraine lsp
+```
+
+The server communicates over stdio using JSON-RPC, following the Language Server Protocol specification. It is not intended to be run directly — editors start it automatically.
+
+## Features
+
+### Diagnostics
+
+Parse errors are reported in real-time as you type. Common diagnostics include:
+
+- Unknown blocks (only `metadata`, `variables`, `workflow`, `config` are valid)
+- Missing required fields
+- Syntax errors (unclosed braces, invalid tokens)
+- Type mismatches (expecting string vs boolean)
+
+### Completion
+
+Triggered automatically on `=`, `{`, and space. Provides:
+
+| Category | Items |
+|----------|-------|
+| Block names | `metadata`, `variables`, `workflow`, `config` |
+| Section names | `pre_checks`, `steps`, `actions` |
+| Properties | `cmd`, `desc`, `on_fail`, `on_success`, `name`, `store_variables`, `store_logs`, `background`, `global` |
+| Value prefixes | `args:`, `env:`, `vault:`, `action:`, `run:` |
+| Booleans | `true`, `false` |
+
+### Hover Documentation
+
+Hover over any keyword to see markdown documentation:
+
+- Block names → description of the block's purpose
+- Properties → type, usage, and examples
+- Value prefixes → resolution behavior
+
+### Document Symbols
+
+The outline view shows top-level blocks:
+
+- `metadata` — Module
+- `workflow` — Class
+- `config` — Module
+
+### Semantic Tokens
+
+Rich token-based highlighting distinguishes:
+
+- Block/section keywords (class)
+- Properties (property)
+- Strings and raw strings (string)
+- Booleans (boolean)
+- Numbers (number)
+- Variable references like `args:`, `env:`, `vault:` (special)
+- Template variables `{{...}}` (preprocessor)
+- Comments (comment)
+
+## Protocol Details
+
+The server implements these LSP capabilities:
+
+- **textDocument/didOpen** — Track opened documents
+- **textDocument/didChange** — Track edits (full sync)
+- **textDocument/didClose** — Release document state
+- **textDocument/diagnostic** — Pull diagnostics for a document
+- **textDocument/completion** — Autocomplete
+- **textDocument/hover** — Hover documentation
+- **textDocument/documentSymbol** — Outline structure
+- **textDocument/semanticTokens/full** — Semantic highlighting
+
+## Editor Setup
+
+Use `migraine init --editor` to configure editors automatically. See the [Editor Setup](/docs/editor-setup) page for details.

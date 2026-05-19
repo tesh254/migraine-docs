@@ -24,7 +24,7 @@ migraine workflow --help   # Show workflow command help
 
 #### `migraine workflow init [name]`
 
-Create a new YAML workflow with comprehensive comments and documentation.
+Create a new YAML workflow with comprehensive comments and documentation, or configure editor LSP integration.
 
 ```bash
 # Create a project configuration file (migraine.yml)
@@ -39,9 +39,30 @@ migraine workflow init --json
 # Create a named workflow in workflows/ directory
 migraine workflow init my-workflow -d "Description of my workflow"
 
+# Configure editor LSP integration (auto-detect)
+migraine workflow init --editor auto
+
+# Configure editor LSP integration (specific editor)
+migraine workflow init --editor vscode
+migraine workflow init --editor neovim
+migraine workflow init --editor vim
+migraine workflow init --editor helix
+
 # Aliases
 migraine init [name]       # Alias for workflow init
 ```
+
+##### `--editor, -e`
+
+Configure editor LSP integration for `.mg` files. Options:
+
+| Value | Behavior |
+|-------|----------|
+| `auto` | Auto-detect installed editors and configure all of them |
+| `vscode` | Install Migraine VS Code extension |
+| `neovim` | Write lspconfig, ftdetect, and syntax files |
+| `vim` | Write ftdetect and syntax files |
+| `helix` | Append LSP config to `languages.toml` |
 
 #### `migraine workflow list`
 
@@ -179,6 +200,16 @@ migraine version --json             # JSON format
 migraine version -s                 # Short format
 migraine version -c                 # With commit hash
 ```
+
+### `migraine lsp`
+
+Start the Migraine Language Server Protocol server for editor integration.
+
+```bash
+migraine lsp
+```
+
+This starts a JSON-RPC server on stdio. It is called automatically by configured editors — you do not need to run this manually. See [Editor Setup](/docs/editor-setup) for details.
 
 ### `migraine buildinfo`
 

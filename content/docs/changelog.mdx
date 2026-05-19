@@ -5,6 +5,23 @@ description: All notable changes to this project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v2.1.0] - 2025-06-20
+
+### Added
+- **Migraine DSL (.mg format)** — Native workflow definition language with concise brace-delimited syntax, backtick strings, comments, and hook support (`on_fail`/`on_success`)
+- **Language Server Protocol** — `migraine lsp` command providing diagnostics, completions, hover docs, document symbols, and semantic tokens for `.mg` files
+- **Editor integration** — `migraine init --editor <editor>` auto-configures VS Code, Neovim, Vim, and Helix with syntax highlighting, filetype detection, and LSP client setup
+- **VS Code extension** — Bundleable extension at `editors/vscode/` with TextMate grammar, LSP client, and completions
+- **Hook support** — `on_fail` and `on_success` hooks on steps, pre-checks, and actions, referencing named actions or inline `run:` commands
+- **Config variables** — `variables {}` block in `.mg` and YAML workflows with `args:`, `env:`, and `vault:` resolution prefixes
+- **Lexer number tokenization** — Bare numbers (e.g. `timeout = 300`) now parse correctly in `.mg` files
+- **Comma-separated actions** — Actions in `.mg` files can optionally be comma-separated
+
+### Changed
+- **`init --editor` flag** — The `migraine init` command now accepts `--editor` to configure editor LSP integration
+- **Improved workflow listing** — Cleaner output with section headers and descriptions for database vs local workflows
+- **Variable resolution** — `ResolveVariables` now accepts config variables from project config, supporting `args:`, `env:`, and `vault:` prefixes
+
 ## [v2.0.0] - 2025-01-08
 
 ### Added

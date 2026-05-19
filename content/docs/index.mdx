@@ -197,6 +197,15 @@ steps:
     description: "Greet with custom name"
 ```
 
+Or use the `.mg` format with variable resolution prefixes:
+
+```mg
+variables {
+    name = "args:NAME"
+    project = "args:PROJECT"
+}
+```
+
 ### 4. Run with Variables
 
 ```bash
@@ -368,8 +377,9 @@ migraine workflow pre-checks deploy-app
 Now that you've created your first workflow, explore these advanced topics:
 
 1. **Workflows**: Learn about advanced workflow features and best practices
-2. **Vault**: Understand variable management and security
-3. **CLI Reference**: Complete command reference with all options
-4. **Alternatives Comparison**: Why Migraine vs other tools
+2. **.mg Format**: Define workflows in Migraine's native DSL with editor support
+3. **Editor Setup**: Get syntax highlighting, completions, and diagnostics in your editor
+4. **Vault**: Understand variable management and security
+5. **CLI Reference**: Complete command reference with all options
 
 The documentation provides comprehensive guides for each of these areas to help you get the most out of Migraine!

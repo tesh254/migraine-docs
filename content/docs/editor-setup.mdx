@@ -1,0 +1,154 @@
+---
+title: Editor Setup
+description: "Configure editor support for .mg files — syntax highlighting, diagnostics, completions, and more"
+---
+
+Migraine provides built-in editor support for `.mg` workflow files. Use `migraine init --editor` to automatically configure your editor.
+
+## Quick Start
+
+```bash
+# Auto-detect and configure all installed editors
+migraine init --editor auto
+
+# Configure a specific editor
+migraine init --editor vscode
+migraine init --editor neovim
+migraine init --editor vim
+migraine init --editor helix
+```
+
+## Supported Editors
+
+### VS Code
+
+Installs the bundled Migraine extension with:
+
+- **Syntax highlighting** — Full TextMate grammar for `.mg` files
+- **Diagnostics** — Real-time parse error detection
+- **Autocompletion** — Keywords, blocks, properties, value prefixes
+- **Hover docs** — Markdown documentation on hover
+- **Document outline** — Block structure in the sidebar
+
+```bash
+migraine init --editor vscode
+```
+
+### Neovim
+
+Writes configuration to `~/.config/nvim/`:
+
+- **LSP configuration** — `lua/migraine_lsp.lua` using `lspconfig`
+- **Filetype detection** — `.mg` files mapped to `migraine` filetype
+- **Syntax highlighting** — Vim syntax definitions
+
+```bash
+migraine init --editor neovim
+```
+
+After setup, add to your `init.lua`:
+
+```lua
+require('migraine_lsp').setup()
+
+-- Or with nvim-cmp:
+require('migraine_lsp').setup({
+  capabilities = require('cmp_nvim_lsp').default_capabilities(),
+})
+```
+
+### Vim
+
+Writes configuration to `~/.vim/`:
+
+- **Filetype detection** — `.mg` files mapped to `migraine` filetype
+- **Syntax highlighting** — Vim syntax definitions
+- **ALE linter** — Integration with Asynchronous Lint Engine
+
+```bash
+migraine init --editor vim
+```
+
+### Helix
+
+Appends Migraine LSP configuration to `languages.toml`:
+
+```bash
+migraine init --editor helix
+```
+
+This adds an entry like:
+
+```toml
+[[language]]
+name = "migraine"
+scope = "source.mg"
+file-types = ["mg"]
+roots = ["migraine.yaml"]
+comment-token = "#"
+
+[language-server.migraine-lsp]
+command = "migraine"
+args = ["lsp"]
+```
+
+## LSP Server
+
+The Migraine LSP server runs via stdio and provides:
+
+| Feature | Description |
+|---------|-------------|
+| Diagnostics | Parse errors shown inline |
+| Completion | Keywords, blocks, properties, value prefixes |
+| Hover | Documentation on hover |
+| Document symbols | `metadata`, `workflow`, `config` blocks in outline |
+| Semantic tokens | Rich token-based highlighting |
+
+### Starting the LSP manually
+
+The LSP is started automatically by configured editors. To run it manually:
+
+```bash
+migraine lsp
+```
+
+This starts a JSON-RPC server on stdio, communicating via the Language Server Protocol.
+
+## Manual LSP Configuration
+
+If you need to configure an editor manually, the LSP server command is:
+
+```
+command: migraine
+args: ["lsp"]
+```
+
+File type: `migraine`  
+File extensions: `.mg`
+
+### Example: LSP with Neovim (manual)
+
+```lua
+lspconfig.migraine_lsp.setup({
+  cmd = { 'migraine', 'lsp' },
+  filetypes = { 'migraine' },
+  root_dir = lspconfig.util.find_git_ancestor,
+})
+```
+
+### Example: LSP with Helix (manual)
+
+Add to `~/.config/helix/languages.toml` (or `~/Library/Preferences/helix/languages.toml` on macOS):
+
+```toml
+[[language]]
+name = "migraine"
+scope = "source.mg"
+file-types = ["mg"]
+roots = ["migraine.yaml"]
+comment-token = "#"
+
+[language-server.migraine-lsp]
+command = "migraine"
+args = ["lsp"]
+```
